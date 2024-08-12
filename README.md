@@ -3,7 +3,7 @@
 Multi State Assigner  is a tool designed to digitalize the assignment of  values. Allows you to assign different values to a numbered list. Meant to be used alongside a clicker and the website for visualization. Built originally off Danny's Binary Assigner (see forked project). Updated to include multiple states.
 
 Sample website usage can be seen at 
-https://binary-assigner.vercel.app/ and https://binary-assigner.vercel.app/view
+https://binary-assigner-auqq.vercel.app and https://binary-assigner-auqq.vercel.app/view
 
 # Features
 This repository was originally developed to monitor wells on a well plate within a laboratory environment between two binary states. However, the applications extend beyond this and are useful for anything you need to track beyond binary states. As this was developed alongside a clicker, controls that are mentioned are assuming that you have the clicker (https://www.amazon.com/gp/product/B09X1G5DCC/ref=ox_sc_act_title_1?smid=A3JAW9CCBGOOEH&psc=1). Current features include:
