@@ -1,109 +1,77 @@
-import { useEffect, useState } from "react";
-import { Inter } from "next/font/google";
-import Head from "next/head";
+import { useState, useEffect } from 'react';
+import Head from 'next/head';
 
-const inter = Inter({ subsets: ["latin"] });
-
-export default function Home() {
-  const [rows, setRows] = useState(12);
-  const [cols, setCols] = useState(8);
-  const [notes, setNotes] = useState("");
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [circleStates, setCircleStates] = useState<boolean[]>(Array(rows * cols).fill(true));
-
-  useEffect(() => {
-    const totalCircles = rows * cols;
-    setCircleStates(Array(totalCircles).fill(true));
-    setSelectedIndex(0);
-  }, [rows, cols]);
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    const totalCircles = rows * cols;
-    if (e.key === "PageDown" || e.key === "ArrowRight") {
-      setSelectedIndex((prev) => Math.min(prev + 1, totalCircles - 1));
-    } else if (e.key === "PageUp" || e.key === "ArrowLeft") {
-      setSelectedIndex((prev) => Math.max(prev - 1, 0));
-    } else if (e.key === "b" || e.key === "B") {
-      setCircleStates((prev) => {
-        const newStates = [...prev];
-        newStates[selectedIndex] = !newStates[selectedIndex];
-        return newStates;
-      });
-    }
-  };
-
-  const handleCircleClick = (index: number) => {
-    setSelectedIndex(index);
-  };
-
-  const handleExport = () => {
-    const values = circleStates.map((state) => (state ? 1 : 0));
-    const data = {
-      rows,
-      cols,
-      notes,
-      values,
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    const now = new Date();
-    const datetime = now.toISOString().replace(/[:.-]/g, "_");
-    link.href = url;
-    link.download = `binary-assigner-${datetime}.json`;
-
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (!e.target?.result) return;
-      try {
-        const data = JSON.parse(e.target.result as string);
-        if (data.values && Array.isArray(data.values)) {
-          setRows(data.rows);
-          setCols(data.cols);
-          setNotes(data.notes || "");
-          setCircleStates(data.values.map((v: number) => v === 1));
-        }
-      } catch (err) {
-        alert("Failed to parse JSON file.");
-      }
-    };
-    reader.readAsText(file);
-  };
+const MultiStateAssigner = () => {
+  const [rows, setRows] = useState(1);
+  const [cols, setCols] = useState(1);
+  const [notes, setNotes] = useState('');
+  const [numStates, setNumStates] = useState(3); // Default to 3 states
+  const [stateColors, setStateColors] = useState(['#ff0000', '#ffff00', '#00ff00']); // Default colors for states
+  const [circleStates, setCircleStates] = useState(Array(rows * cols).fill(0));
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [selectedIndex, rows, cols]);
+  }, [selectedIndex, rows, cols, numStates]);
+
+  useEffect(() => {
+    // Update circleStates when numStates changes
+    setCircleStates(Array(rows * cols).fill(0));
+  }, [numStates, rows, cols]);
 
   const handleRowsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Math.max(1, parseInt(e.target.value) || 1);
     setRows(value);
+    setCircleStates(Array(value * cols).fill(0));
   };
 
   const handleColsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Math.max(1, parseInt(e.target.value) || 1);
     setCols(value);
+    setCircleStates(Array(rows * value).fill(0));
+  };
+
+  const handleNumStatesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Math.max(1, parseInt(e.target.value) || 1);
+    setNumStates(value);
+    // Update colors to match the number of states
+    const newColors = [...stateColors];
+    while (newColors.length < value) {
+      newColors.push('#' + Math.floor(Math.random()*16777215).toString(16)); // Generate random color
+    }
+    setStateColors(newColors.slice(0, value));
+  };
+
+  const handleCircleClick = (index: number) => {
+    const newStates = [...circleStates];
+    newStates[index] = (newStates[index] + 1) % numStates; // Cycle through available states
+    setCircleStates(newStates);
+    setSelectedIndex(index);
+  };
+
+  const handleExport = () => {
+    // Export logic
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Import logic
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // Handle keyboard events if needed
   };
 
   return (
     <>
       <Head>
-        <title>Binary Assigner</title>
+        <title>Multi-State Assigner</title>
       </Head>
-      <main className={`${inter.className} flex flex-col min-h-screen bg-gray-100`}>
+      <main className="flex flex-col min-h-screen bg-gray-100">
         <header className="bg-white shadow-md py-4 px-8 text-center">
-          <h1 className="text-2xl font-bold">Binary Assigner</h1>
+          <h1 className="text-2xl font-bold">Multi-State Assigner</h1>
         </header>
         <div className="flex flex-col items-center py-4 space-y-4">
           <div className="flex space-x-4">
@@ -124,6 +92,16 @@ export default function Home() {
                 value={cols}
                 min={1}
                 onChange={handleColsChange}
+                className="border p-2 rounded w-20"
+              />
+            </label>
+            <label className="flex flex-col">
+              Number of States
+              <input
+                type="number"
+                value={numStates}
+                min={1}
+                onChange={handleNumStatesChange}
                 className="border p-2 rounded w-20"
               />
             </label>
@@ -157,8 +135,11 @@ export default function Home() {
                 key={index}
                 onClick={() => handleCircleClick(index)}
                 className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-10 lg:h-10 xl:w-12 xl:h-12 rounded-full flex justify-center items-center cursor-pointer
-                  ${circleStates[index] ? "bg-green-500" : "bg-red-500"}
-                  ${selectedIndex === index ? "border-4 border-blue-500" : ""}`}
+                  ${selectedIndex === index ? "border-4 border-blue-500" : ""}
+                  `}
+                style={{
+                  backgroundColor: stateColors[circleStates[index]] || '#fff',
+                }}
               >
                 <span className="text-white text-xs sm:text-sm md:text-base lg:text-sm xl:text-base">
                   {index + 1}
@@ -170,4 +151,6 @@ export default function Home() {
       </main>
     </>
   );
-}
+};
+
+export default MultiStateAssigner;
